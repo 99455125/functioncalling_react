@@ -1,6 +1,5 @@
-tools = [get_closing_price_function]
-
-get_closing_price_function = {
+tools = [
+    {
         "name": "get_closing_price",
         "description": "使用该工具获取指定股票的收盘价",
         "parameters": {
@@ -13,8 +12,8 @@ get_closing_price_function = {
             },
             "required": ["name"]
         },
-    }
-
+    },
+]
 
 def get_closing_price(name):
     if name == "青岛啤酒":
