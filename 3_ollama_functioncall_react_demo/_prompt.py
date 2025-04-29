@@ -1,18 +1,11 @@
 REACT_PROMPT = """
 {instructions}
 
-TOOLS:
-------
-
-You have access to the following tools:
-
-{tools}
-
 To use a tool, please use the following format:
 
 ```
 Thought: Do I need to use a tool? Yes
-Action: the action to take, should be one of [{tool_names}]
+Action: the action to take, should be one of tools
 Action Input: the input to the action
 ```
 
@@ -24,9 +17,5 @@ When you have a response to say to the Human, or if you do not need to use a too
 Thought: Do I need to use a tool? No
 Final Answer: [your response here]
 ```
-
-Begin!
-
-New input: {input}
 
 """

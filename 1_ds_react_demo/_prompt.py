@@ -1,6 +1,13 @@
 REACT_PROMPT = """
 {instructions}
 
+TOOLS:
+------
+
+You have access to the following tools:
+
+{tools}
+
 To use a tool, please use the following format:
 
 ```

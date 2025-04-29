@@ -5,46 +5,82 @@ from _functioncalling_list import excel_import_function, mongodb_query_function,
 
 functions = [excel_import_function, mongodb_query_function]
 
+
 def send_messages(messages):
     response = client.chat.completions.create(
         model="deepseek-chat",
         messages=messages,
-        tools=functions
+        tools=functions,
+        tool_choice="auto"
     )
-    return response
+    return response.choices[0].message
+
 
 if __name__ == "__main__":
-    instructions = ("你是一个excel查询工具, 用户给你excel路径， 你帮助用户获取excel内符合用户要求的数据。因为excle数据量过大, 不方便将所有数据喂给你来进行数据分析, 所以你在处理用户excel查询时，先将excel数据保存至mongodb，再根据用户生成sql，将查询到符合要求的mongodb中的数据返回给用户。"
-                    "如果用户没有给出集合名称， 你使用默认集合名称为 'excel_data'。")
-    query = "excel路径：, 请帮我查出所有外号中带有丁真的人"
-
-    prompt = REACT_PROMPT.format(instructions=instructions, input=query)
+    instructions = (
+        "你是一个excel查询工具。用户提供excel路径后，你需要先将数据存入MongoDB，"
+        "再根据用户需求生成查询SQL。函数调用成功后，根据返回状态生成SQL。"
+        "默认集合名为'excel_data'，参数缺省时使用默认值。"
+    )
+    query = "excel路径：D:\dingzhen.xlsx，请帮我查出所有外号中带有丁真但姓名不是丁真的人"
 
     messages = [
-        {"role": "system", "content": prompt},
+        {"role": "system", "content": REACT_PROMPT.format(instructions=instructions)},
         {"role": "user", "content": query}
     ]
-
 
     while True:
         response_message = send_messages(messages)
 
-        # 检查是否需要函数调用
-        if response_message.get("function_call"):
-            function_name = response_message.function_call.name
-            function_args = json.loads(response_message.function_call.arguments)
-            result = handle_function_call(function_name, function_args)
-            # 将函数调用结果反馈给大模型
-            messages.append({
-                "role": "function",
-                "name": function_name,
-                "content": json.dumps(result, ensure_ascii=False)
-            })
+        # 添加助手的回复到对话历史
+        assistant_message = {
+            "role": response_message.role,
+            "content": response_message.content or None  # 确保content不为空字符串
+        }
+        if response_message.tool_calls:
+            assistant_message["tool_calls"] = [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments
+                    }
+                } for tc in response_message.tool_calls
+            ]
+        messages.append(assistant_message)
+
+        # 处理工具调用
+        if response_message.tool_calls:
+            for tool_call in response_message.tool_calls:
+
+                print(f"\n=== 大模型回复函数调用 ===")
+                print(f"参数名称：" + tool_call.function.name)
+                print("参数明细：")
+                print(json.dumps(tool_call.function.arguments, indent=2, ensure_ascii=False))
+
+
+                # 执行函数调用
+                result = handle_function_call(
+                    tool_call.function.name,
+                    json.loads(tool_call.function.arguments))
+
+                print("函数调用结果：")
+                print(json.dumps(result, ensure_ascii=False))
+
+                # 添加函数调用结果到对话历史
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": tool_call.function.name,
+                    "content": json.dumps(result, ensure_ascii=False)
+                })
+
+                # 继续循环处理后续响应
             continue
 
-        # 输出最终答案
-        print("最终答案:", response_message.content)
-        break
-
-
-
+        # 处理最终回复
+        if response_message.content:
+            print("\n=== 最终答案 ===")
+            print(response_message.content)
+            break

@@ -19,7 +19,7 @@ excel_import_function = {
                 "db_name": {
                     "type": "string",
                     "description": "MongoDB数据库名称",
-                    "default": "test"
+                    "default": "excel"
                 },
                 "collection_name": {
                     "type": "string",
@@ -31,7 +31,7 @@ excel_import_function = {
                     "default": "mongodb://192.168.2.192:27017/"
                 }
             },
-            "required": ["excel_path", "collection_name", "db_name", "mongo_uri"]
+            "required": ["excel_path", "collection_name"]
         }
     }
 }
@@ -61,10 +61,10 @@ mongodb_query_function = {
                 "db_name": {
                     "type": "string",
                     "description": "数据库名称",
-                    "default": "test"
+                    "default": "excel"
                 }
             },
-            "required": ["collection_name", "query", "db_name", "mongo_uri"]
+            "required": ["collection_name", "query"]
         }
     }
 }
